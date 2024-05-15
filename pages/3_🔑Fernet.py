@@ -1,48 +1,47 @@
-def main():
-    st.title("File Encryption and Decryption with Fernet")
+import streamlit as st
+from cryptography.fernet import Fernet
 
-    # Sidebar for key generation
-    st.sidebar.header("Key Generation")
-    key = st.sidebar.button("Generate Key")
-    generated_key = None
+def generate_key():
+    return Fernet.generate_key()
 
-    if key:
-        generated_key = generate_key()
-        st.sidebar.text("Generated Key: {}".format(generated_key.decode()))
+def load_key(key):
+    return Fernet(key)
 
-    # Main content for file encryption and decryption
-    st.header("Encrypt / Decrypt Files")
+def encrypt_file(file, key, original_extension):
+    data = file.read()
+    fernet = load_key(key)
+    encrypted_data = fernet.encrypt(data)
+    return encrypted_data, original_extension
 
-    action = st.radio("Select Action:", ("Encrypt", "Decrypt"))
+def decrypt_file(file, key, original_extension):
+    data = file.read()
+    fernet = load_key(key)
+    decrypted_data = fernet.decrypt(data)
+    return decrypted_data, original_extension
 
-    if action == "Encrypt":
-        file = st.file_uploader("Upload File to Encrypt")
-        if file is not None:
-            file_contents = file.read()
-            if generated_key:
-                encrypted_content = encrypt_file(generated_key, file_contents)
-                st.download_button(
-                    label="Download Encrypted File",
-                    data=encrypted_content,
-                    file_name="encrypted_file.txt",
-                    mime="text/plain",
-                )
+st.title("File Encryption and Decryption with Fernet")
 
-    elif action == "Decrypt":
-        file = st.file_uploader("Upload File to Decrypt")
-        if file is not None:
-            file_contents = file.read()
-            if generated_key:
-                try:
-                    decrypted_content = decrypt_file(generated_key, file_contents)
-                    st.download_button(
-                        label="Download Decrypted File",
-                        data=decrypted_content,
-                        file_name="decrypted_file.txt",
-                        mime="text/plain",
-                    )
-                except Exception as e:
-                    st.error("Decryption Error: {}".format(e))
+action = st.selectbox("Select Action", ["Encrypt", "Decrypt"])
 
-if __name__ == "__main__":
-    main()
+generated_key = None
+
+if action == "Encrypt":
+    generated_key = generate_key()
+else:
+    user_key = st.text_input("Enter Key")
+
+file = st.file_uploader("Upload a file")
+
+if st.button("Encrypt/Decrypt"):
+    if file is not None and (action == "Encrypt" or (action == "Decrypt" and user_key)):
+        if action == "Encrypt":
+            original_extension = os.path.splitext(file.name)[1]  # Get the original file extension
+            encrypted_data, original_extension = encrypt_file(file, generated_key, original_extension)
+            with io.BytesIO(encrypted_data) as encrypted_file:
+                st.download_button(label="Download Encrypted File", data=encrypted_file, file_name="encrypted_file" + original_extension, mime="application/octet-stream")
+            st.info("File encrypted successfully! This is the encryption key: {}".format(generated_key.decode()))
+        elif action == "Decrypt":
+            original_extension = os.path.splitext(file.name)[1]  # Get the original file extension
+            decrypted_data, original_extension = decrypt_file(file, user_key, original_extension)
+            with io.BytesIO(decrypted_data) as decrypted_file:
+                st.download_button(label="Download Decrypted File", data=decrypted_file, file_name="decrypted_file" + original_extension, mime="application/octet-stream")
