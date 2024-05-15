@@ -19,9 +19,10 @@ def main():
 
     # Sidebar for key generation
     st.sidebar.header("Key Generation")
-    key = st.sidebar.button("Generate Key")
+    generate = st.sidebar.button("Generate Key")
+    key = None
 
-    if key:
+    if generate:
         key = generate_key()
         st.sidebar.text("Generated Key: {}".format(key.decode()))
 
@@ -31,30 +32,30 @@ def main():
     action = st.radio("Select Action:", ("Encrypt", "Decrypt"))
 
     if action == "Encrypt":
-        file = st.file_uploader("Upload File to Encrypt")
-        if file is not None:
-            file_contents = file.read()
-            if key:
+        if key is not None:
+            file = st.file_uploader("Upload File to Encrypt")
+            if file is not None:
+                file_contents = file.read()
                 encrypted_content = encrypt_file(key, file_contents)
                 st.download_button(
                     label="Download Encrypted File",
                     data=encrypted_content,
                     file_name="encrypted_file.txt",
-                    mime="text/plain",
+                    mime="application/octet-stream",
                 )
 
     elif action == "Decrypt":
-        file = st.file_uploader("Upload File to Decrypt")
-        if file is not None:
-            file_contents = file.read()
-            if key:
+        if key is not None:
+            file = st.file_uploader("Upload File to Decrypt")
+            if file is not None:
+                file_contents = file.read()
                 try:
                     decrypted_content = decrypt_file(key, file_contents)
                     st.download_button(
                         label="Download Decrypted File",
                         data=decrypted_content,
                         file_name="decrypted_file.txt",
-                        mime="text/plain",
+                        mime="application/octet-stream",
                     )
                 except Exception as e:
                     st.error("Decryption Error: {}".format(e))
